@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+    <title>Document</title>
+</head>
+<body>
+    <header class="header">
+        <h2 class="title">U-R</h2>
+    </header>
+
+    
+    <form action="#"class="form">
+        <h1 class="form--title" id="Ft">Pedido</h1>
+        <div class="form--item">
+            <label  for="producto">Seleccione el producto deseado</label>
+            <select class="input" name="producto" id="producto">
+                <option  value="">Selecciona una opción</option>
+                <option value="Coca-cola">Coca-cola</option>
+                <option value="Pepsi">Pepsi</option>
+                <option value="Sprite">Sprite</option>
+            </select>
+        </div>
+        <div class="form--item">
+            <label for="cantidad">Seleccione la cantidad</label>
+            <input class="input" type="number"name="cantidad" id="cantidad">
+        </div>
+        <div class="form--item">
+            <label for="precio">Ingrese el monto a pagar</label>
+            <input class="input" type="number"id="precio" name="precio">
+        </div>
+        <div class="form--item">
+            <label for="fecha">Seleccione la fecha de su pedido</label>
+            <input class="input" type="date" name="fecha" id="fecha">
+        </div>
+        <div class="form--item">
+            <label for="direccion">Ingrese la dirección de su residencia</label>
+            <input class="input" type="text" name="direccion">
+        </div>
+        <div class="form--item--submit">
+            <input class="input--submit" type="submit" id="bf">
+             <button type="button" id="bc" style="display: none;">Cancelar edición</button>
+        </div>
+        <input type="hidden" name="id" id="id">
+    </form>
+
+    <hr>
+   
+    <button id="Productos" type="button">Productos</button>
+    <h2>Productos guardados</h2>
+    <div id="lista-productos"></div>
+
+    <script>
+        const bf = document.getElementById('bf');
+        const bc = document.getElementById('bc');
+        const crear = document.querySelector('.form');
+        const Ft = document.getElementById('Ft'); 
+
+        const form= document.querySelector('.form')
+        const btnP=document.getElementById('Productos')
+        const contP=document.getElementById('lista-productos')
+
+        form.addEventListener('submit',async (e)=>{
+            e.preventDefault()
+            try{
+            const datos= new FormData(e.target);
+            const objeto=Object.fromEntries(datos.entries())
+            const id=objeto.id 
+            const url= id ? `/actualizar/${id}`:"/crear"
+            method= id ?"PUT": "POST"
+            const res=await fetch(url,{
+                method:method,
+                headers:{"Content-Type":"application/json"},
+                body:JSON.stringify(objeto)
+
+                
+            })
+            if(res.ok){
+                const texto=await res.text()
+                alert(texto)
+                form.reset()
+                document.getElementById("id").value=""
+                Leer()
+            }
+            }
+                catch(error){
+                    console.error('tu error es: ',error)
+                
+            }
+            
+        });
+
+        const Leer= async()=>{
+         try{
+            const res=await fetch("/leer")
+            if(res.ok){
+            const producto= await res.json()
+            mostrarP(producto)
+            }
+            
+         }
+
+         catch(error){
+                    console.error('tu error es: ',error)
+                
+            }
+        }
+            const mostrarP=(Productos)=>{
+             contP.innerHTML=""
+             const fragmento=document.createDocumentFragment()
+             Productos.forEach((cosa)=>{
+                const pedazo=document.createElement("div")
+                pedazo.className="producto-item"
+                pedazo.innerHTML=`
+                 <div class="producto-info">
+                 Producto:  ${cosa.producto}<br>
+                 Cantidad:  ${cosa.cantidad}<br>
+                 Precio:    ${cosa.precio}<br>
+                 Dirreccion:${cosa.direccion}<br>
+                 Fecha      ${cosa.fecha}<br><br>
+                 <div>
+
+    <button onclick="editarP('${cosa._id}')">Editar</button>
+<button onclick="deleteP('${cosa._id}')">Eliminar</button>
+
+   </div>
+                 <hr>
+                 </div>
+                `;
+                fragmento.appendChild(pedazo)
+             });
+             contP.appendChild(fragmento)
+            }
+            const editarP= async(id)=>{
+                try{const res = await fetch("/leer")
+
+            if (res.ok){
+                const Productos = await res.json()
+                const product=Productos.find(p=>p._id===id)
+                if(product){
+                    document.getElementById('id').value = product._id;
+                    document.getElementById('producto').value=product.producto
+                    document.getElementById('cantidad').value=product.cantidad
+                    document.getElementById('precio').value=product.precio
+                    document.getElementById('direccion').value=product.direccion
+                   document.getElementById('fecha').value = product.fecha?.split('T')[0] || ""
+                    document.getElementById('id').value=product._id
+
+                    Ft.textContent="Actualizar de pedido"
+                    bf.textContent="Actualizar"
+                     bc.style.display='inline-block'
+                        crear.scrollIntoView({ behavior: 'smooth' });
+                }
+            }
+            
+            }
+                catch(error){
+                    console.error('tu error es: ',error)
+                
+            }
+              
+            }
+             const resetForm=()=>{
+            crear.reset()
+            document.getElementById('id').value=""
+            Ft.textContent="Ingrese sus productos"
+            bf.textContent="Enviar"
+            bc.style.display='none'
+        }
+            btnP.addEventListener("click",Leer)
+            bc.addEventListener('click',resetForm)
+            
+            async function deleteP(id) {
+  const confirmar = confirm("¿Eliminar este producto?");
+  if (!confirmar) return;
+
+  try {
+    const res = await fetch(`/eliminar/${id}`, {
+      method: "DELETE"
+    });
+    if (res.ok) {
+      alert("Producto eliminado");
+      Leer();
+    }
+  } catch (error) {
+    console.error("Error al eliminar:", error);
+  }
+}
+    </script>
+   
+</body>
+</html>
